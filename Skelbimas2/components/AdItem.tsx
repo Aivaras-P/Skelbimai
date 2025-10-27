@@ -41,7 +41,7 @@ export default function AdItem({ ad, onPress }: Props) {
         </View>
       </TouchableOpacity>
 
-      {/* Tik kitų skelbimams galima įsiminti */}
+
       {currentUser && !isOwner && (
         <TouchableOpacity
           style={styles.favoriteButton}

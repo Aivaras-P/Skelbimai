@@ -16,8 +16,8 @@ const handleLogin = async () => {
     Alert.alert('Klaida', result);
   } else {
     Alert.alert(`Prisijungėte kaip ${username}`);
-    // Naudojame replace, kad išjungtume galimybę grįžti
-    router.replace('/'); // nukreipiame į HomeScreen
+    
+    router.replace('/'); 
   }
 };
 

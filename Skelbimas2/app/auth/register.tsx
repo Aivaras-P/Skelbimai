@@ -17,7 +17,7 @@ const handleRegister = async () => {
     Alert.alert('Klaida', result);
   } else {
     Alert.alert('Sveikiname!', 'Sėkmingai prisiregistravote!');
-    router.replace('/'); // pakeičiam ekraną
+    router.replace('/'); 
   }
 };
 

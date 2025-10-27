@@ -1,11 +1,10 @@
-// context/UserContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type User = {
   username: string;
   password: string;
-  favorites: string[]; // ad.id sąrašas
+  favorites: string[];
 };
 
 type UserContextType = {
@@ -28,7 +27,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Paleidžiant programą
   useEffect(() => {
     loadUserFromStorage();
   }, []);

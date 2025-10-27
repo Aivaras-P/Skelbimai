@@ -1,4 +1,3 @@
-// context/AdContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useEffect, useReducer } from 'react';
 import { Ad } from '../types/Ad';
