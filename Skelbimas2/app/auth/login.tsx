@@ -4,49 +4,62 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { useUserContext } from '../../context/UserContext';
 
 export default function LoginScreen() {
-  const { login } = useUserContext();
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const { login } = useUserContext();
+
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const handleLogin = async () => {
-  const result = await login(username, password);
-  if (result) {
-    Alert.alert('Klaida', result);
-  } else {
-    Alert.alert(`Prisijungėte kaip ${username}`);
-    
-    router.replace('/'); 
-  }
-};
+  const handleLogin = async () => {
+    setLoading(true);
+    const error = await login(email, password);
+    setLoading(false);
 
+    if (error) {
+      Alert.alert('Klaida', error);
+    } else {
+      router.replace('/'); // grįžtam į pagrindinį ekraną
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Prisijungimas</Text>
-      {error && <Text style={styles.error}>{error}</Text>}
 
-      <TextInput placeholder="Vartotojo vardas" style={styles.input} value={username} onChangeText={setUsername} />
-      <TextInput placeholder="Slaptažodis" secureTextEntry style={styles.input} value={password} onChangeText={setPassword} />
+      <TextInput
+        placeholder="El. paštas"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Prisijungti</Text>
+      <TextInput
+        placeholder="Slaptažodis"
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+        secureTextEntry
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Kraunama...' : 'Prisijungti'}</Text>
       </TouchableOpacity>
 
-<TouchableOpacity onPress={() => router.push({ pathname: '/auth/register' })}>
-  <Text style={styles.link}>Neturi paskyros? Registruokis</Text>
-</TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push('/auth/register')}>
+        <Text style={styles.linkText}>Neturite paskyros? Registruokitės čia</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginBottom: 10, padding: 10 },
-  button: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: 16, backgroundColor: '#fafafa' },
+  title: { fontSize: 24, fontWeight: '600', marginBottom: 24, textAlign: 'center' },
+  input: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: '#ddd' },
+  button: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
   buttonText: { color: '#fff', fontWeight: '600' },
-  link: { textAlign: 'center', color: '#007AFF', marginTop: 10 },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
+  linkText: { color: '#007AFF', textAlign: 'center', marginTop: 8 },
 });

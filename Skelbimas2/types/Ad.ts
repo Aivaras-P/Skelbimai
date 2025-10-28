@@ -18,5 +18,6 @@ export type Ad = {
   createdAt: number;
   updatedAt?: number;
   username: string;
+  ownerId: string;
 };
 

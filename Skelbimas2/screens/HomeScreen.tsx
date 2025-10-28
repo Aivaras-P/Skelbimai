@@ -17,6 +17,7 @@ const categoriesList = ['CPU', 'GPU', 'Motherboard', 'RAM', 'PSU', 'Case'];
 
 export default function HomeScreen() {
   const router = useRouter();
+
   const { ads, isLoading } = useAdContext();
   const { currentUser, logout } = useUserContext();
 
@@ -177,9 +178,15 @@ const filteredAds = useMemo(() => {
         />
       )}
 
-      <TouchableOpacity style={styles.addButton} onPress={() => router.push('/add')}>
-        <Text style={styles.addButtonText}>＋</Text>
-      </TouchableOpacity>
+{currentUser && (
+  <TouchableOpacity
+    style={styles.addButton}
+    onPress={() => router.push('/add')}
+  >
+    <Text style={styles.addButtonText}>＋</Text>
+  </TouchableOpacity>
+)}
+
     </View>
   );
 }

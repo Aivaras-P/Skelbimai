@@ -1,9 +1,9 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import React, { useState } from 'react';
 import {
   Alert,
-  Animated,
   Image,
   Modal,
   ScrollView,
@@ -13,24 +13,22 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
 import { useAdContext } from '../context/AdContext';
 import { useUserContext } from '../context/UserContext';
+import { storage } from '../db/firebase';
 import { Ad, ContactInfo } from '../types/Ad';
 
 const categoriesList = ['CPU', 'GPU', 'Motherboard', 'RAM', 'PSU', 'Case'];
 
-
 export default function AddEditAdScreen() {
+  const CLOUDINARY_CLOUD_NAME = 'dfihzsvmw';  // tavo Cloudinary cloud name
+  const CLOUDINARY_UPLOAD_PRESET = 'unsigned_upload'; // tavo upload preset pavadinimas
   const { currentUser } = useUserContext();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { ads, addAd, updateAd } = useAdContext();
   const router = useRouter();
 
   const editingAd = ads.find((ad) => ad.id === editId);
-  const canEdit = editingAd?.username === currentUser?.username;
-
 
   const [title, setTitle] = useState(editingAd?.title || '');
   const [description, setDescription] = useState(editingAd?.description || '');
@@ -44,76 +42,140 @@ export default function AddEditAdScreen() {
   const [images, setImages] = useState<string[]>(editingAd?.images || []);
   const [mainImageIndex, setMainImageIndex] = useState(0);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-50)).current;
+const handlePickImage = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Reikia leidimo', 'Suteikite prieigą prie galerijos.');
+    return;
+  }
 
-  const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Reikia leidimo', 'Suteikite prieigą prie galerijos.');
-      return;
-    }
+  try {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+    });
 
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-        allowsMultipleSelection: true,
-      });
+    if (!result.canceled && result.assets.length > 0) {
+      const uploadedUrls: string[] = [];
 
-      if (!result.canceled && result.assets.length > 0) {
-        const uris = result.assets.map((asset) => asset.uri);
-        setImages((prev) => [...prev, ...uris]);
+      for (let i = 0; i < result.assets.length; i++) {
+        const asset = result.assets[i];
+        if (!asset.uri) continue;
+
+        const data = new FormData();
+        data.append('file', {
+          uri: asset.uri,
+          type: 'image/jpeg',
+          name: `ad_${Date.now()}_${i}.jpg`,
+        } as any);
+        data.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: data,
+        });
+
+        if (!res.ok) {
+          console.log('Cloudinary upload failed', await res.text());
+          continue;
+        }
+
+        const json = await res.json();
+        uploadedUrls.push(json.secure_url);
       }
-    } catch (err) {
-      console.log('ImagePicker error:', err);
-      Alert.alert('Klaida', 'Nepavyko įkelti nuotraukos.');
+
+      setImages(prev => {
+        const newImages = [...prev, ...uploadedUrls];
+        console.log('Updated images array:', newImages);
+        return newImages;
+      });
     }
-  };
+  } catch (err) {
+    console.log('ImagePicker error:', err);
+    Alert.alert('Klaida', 'Nepavyko įkelti nuotraukos.');
+  }
+};
 
-  const toggleCategory = (cat: string) => {
-    setCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
-  };
 
-  const handleSave = () => {
-    if (!title.trim() || !description.trim() || !price.trim()) {
-      Alert.alert('Klaida', 'Užpildykite visus privalomus laukus.');
-      return;
-    }
+const handleSave = async () => {
+  // patikrinam privalomus laukus
+  if (!title.trim() || !description.trim() || !price.trim()) {
+    Alert.alert('Klaida', 'Užpildykite visus privalomus laukus.');
+    return;
+  }
 
+  // konvertuojam kainą į number
+  const numericPrice = parseFloat(price);
+  if (isNaN(numericPrice) || numericPrice < 0) {
+    Alert.alert('Klaida', 'Įveskite teisingą kainą.');
+    return;
+  }
+
+  if (!currentUser) {
+    Alert.alert('Klaida', 'Turite būti prisijungę.');
+    return;
+  }
+
+  try {
     const now = Date.now();
-    const reorderedImages = [...images];
+    const uploadedImages: string[] = [];
+
+    // įkeliam tik tas nuotraukas, kurios dar nėra URL formatu
+    for (let i = 0; i < images.length; i++) {
+      const uri = images[i];
+      if (uri.startsWith('https://')) {
+        uploadedImages.push(uri);
+        continue;
+      }
+
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const fileName = `${Date.now()}_${i}.jpg`;
+      const imageRef = ref(storage, `ads/${fileName}`);
+      await uploadBytes(imageRef, blob);
+      const url = await getDownloadURL(imageRef);
+
+      uploadedImages.push(url);
+    }
+
+    // pagrindinė nuotrauka pirmoje vietoje
+    const reorderedImages = [...uploadedImages];
     if (mainImageIndex > 0) {
       const [mainImage] = reorderedImages.splice(mainImageIndex, 1);
       reorderedImages.unshift(mainImage);
     }
 
     const ad: Ad = {
-      id: editId ?? uuidv4(),
+      id: editId ?? `${now}`,
       title,
       description,
-      price: parseFloat(price),
+      price: numericPrice, // naudojam number
       categories: categories as Ad['categories'],
       images: reorderedImages,
       contacts,
       createdAt: editingAd?.createdAt ?? now,
       updatedAt: now,
-      username: currentUser?.username || 'guest',
+      username: currentUser.username,
+      ownerId: currentUser.uid,
     };
 
     if (editId) {
-      updateAd(ad);
+      await updateAd(ad);
       Alert.alert('Atnaujinta', 'Skelbimas atnaujintas!');
     } else {
-      addAd(ad);
+      await addAd(ad);
       Alert.alert('Sukurta', 'Naujas skelbimas pridėtas!');
     }
 
     router.back();
-  };
+  } catch (err) {
+    console.log('Save ad error:', err);
+    Alert.alert('Klaida', 'Nepavyko išsaugoti skelbimo.');
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

@@ -4,49 +4,79 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { useUserContext } from '../../context/UserContext';
 
 export default function RegisterScreen() {
-  const { register } = useUserContext();
   const router = useRouter();
+  const { register } = useUserContext();
+
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const handleRegister = async () => {
-  const result = await register(username, password, password2);
-  if (result) {
-    Alert.alert('Klaida', result);
-  } else {
-    Alert.alert('Sveikiname!', 'Sėkmingai prisiregistravote!');
-    router.replace('/'); 
-  }
-};
+  const handleRegister = async () => {
+    setLoading(true);
+    const error = await register(email, username, password);
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Klaida', error);
+    } else {
+      router.replace('/'); // grįžtam į pagrindinį ekraną
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Registracija</Text>
-      {error && <Text style={styles.error}>{error}</Text>}
 
-      <TextInput placeholder="Vartotojo vardas" style={styles.input} value={username} onChangeText={setUsername} />
-      <TextInput placeholder="Slaptažodis" secureTextEntry style={styles.input} value={password} onChangeText={setPassword} />
-      <TextInput placeholder="Pakartokite slaptažodį" secureTextEntry style={styles.input} value={password2} onChangeText={setPassword2} />
+      <TextInput
+        placeholder="El. paštas"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Registruotis</Text>
+      <TextInput
+        placeholder="Vartotojo vardas"
+        value={username}
+        onChangeText={setUsername}
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Slaptažodis"
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+        secureTextEntry
+      />
+
+      <TextInput
+        placeholder="Pakartokite slaptažodį"
+        value={password2}
+        onChangeText={setPassword2}
+        style={styles.input}
+        secureTextEntry
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Kraunama...' : 'Registruotis'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.link}>Grįžti atgal</Text>
+      <TouchableOpacity onPress={() => router.push('/auth/login')}>
+        <Text style={styles.linkText}>Jau turite paskyrą? Prisijunkite čia</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginBottom: 10, padding: 10 },
-  button: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: 16, backgroundColor: '#fafafa' },
+  title: { fontSize: 24, fontWeight: '600', marginBottom: 24, textAlign: 'center' },
+  input: { backgroundColor: '#fff', padding: 12, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: '#ddd' },
+  button: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
   buttonText: { color: '#fff', fontWeight: '600' },
-  link: { textAlign: 'center', color: '#007AFF', marginTop: 10 },
-  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
+  linkText: { color: '#007AFF', textAlign: 'center', marginTop: 8 },
 });
