@@ -197,7 +197,7 @@ const handleSave = async () => {
   style={[styles.input, { height: 80, color: '#000', fontWeight: '500' }]}
   multiline
   placeholder="Būklė, specifikacijos..."
-  placeholderTextColor="#888" // Placeholder spalva, kad ir ji būtų matoma
+  placeholderTextColor="#888"
 />
 
 
