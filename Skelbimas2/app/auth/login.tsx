@@ -34,6 +34,7 @@ export default function LoginScreen() {
         style={styles.input}
         keyboardType="email-address"
         autoCapitalize="none"
+        placeholderTextColor="#888"
       />
 
       <TextInput

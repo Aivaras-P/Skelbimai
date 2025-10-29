@@ -127,7 +127,7 @@ const filteredAds = useMemo(() => {
 
       {/* Paieška */}
       <TextInput
-        placeholder="Paieška pagal pavadinimą ar aprašymą..."
+        placeholder="Paieška pagal pavadinimą ar kainą..."
         value={search}
         onChangeText={setSearch}
         style={styles.searchInput}

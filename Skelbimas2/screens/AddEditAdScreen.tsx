@@ -189,15 +189,17 @@ const handleSave = async () => {
         placeholder="Pvz. Ryzen 7 5800X"
       />
 
-      {/* Aprašymas */}
-      <Text style={styles.label}>Aprašymas</Text>
-      <TextInput
-        value={description}
-        onChangeText={setDescription}
-        style={[styles.input, { height: 80 }]}
-        multiline
-        placeholder="Būklė, specifikacijos..."
-      />
+{/* Aprašymas */}
+<Text style={[styles.label, { color: '#333', fontWeight: '600' }]}>Aprašymas</Text>
+<TextInput
+  value={description}
+  onChangeText={setDescription}
+  style={[styles.input, { height: 80, color: '#000', fontWeight: '500' }]}
+  multiline
+  placeholder="Būklė, specifikacijos..."
+  placeholderTextColor="#888" // Placeholder spalva, kad ir ji būtų matoma
+/>
+
 
       {/* Kaina */}
       <Text style={styles.label}>Kaina (€)</Text>
