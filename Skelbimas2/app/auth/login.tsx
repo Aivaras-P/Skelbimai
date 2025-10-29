@@ -19,7 +19,7 @@ export default function LoginScreen() {
     if (error) {
       Alert.alert('Klaida', error);
     } else {
-      router.replace('/'); // grįžtam į pagrindinį ekraną
+      router.replace('/');
     }
   };
 

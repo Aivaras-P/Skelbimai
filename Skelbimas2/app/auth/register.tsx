@@ -21,7 +21,7 @@ export default function RegisterScreen() {
     if (error) {
       Alert.alert('Klaida', error);
     } else {
-      router.replace('/'); // grįžtam į pagrindinį ekraną
+      router.replace('/');
     }
   };
 

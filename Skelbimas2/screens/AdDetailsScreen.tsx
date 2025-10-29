@@ -19,19 +19,20 @@ export default function AdDetailsScreen() {
 
   const isOwner = currentUser?.username === ad.username;
 
-  const handleDelete = () => {
-    Alert.alert('Ištrinti skelbimą', 'Ar tikrai nori ištrinti šį skelbimą?', [
-      { text: 'Atšaukti', style: 'cancel' },
-      {
-        text: 'Ištrinti',
-        style: 'destructive',
-        onPress: () => {
-          deleteAd(ad.id);
-          router.back();
-        },
+const handleDelete = () => {
+  Alert.alert('Ištrinti skelbimą', 'Ar tikrai nori ištrinti šį skelbimą?', [
+    { text: 'Atšaukti', style: 'cancel' },
+    {
+      text: 'Ištrinti',
+      style: 'destructive',
+      onPress: () => {
+        deleteAd(ad.firestoreId); 
+        router.back();
       },
-    ]);
-  };
+    },
+  ]);
+};
+
 
   const imagesForViewer = ad.images.map((uri) => ({ uri }));
 
@@ -51,6 +52,10 @@ export default function AdDetailsScreen() {
       <Text style={styles.price}>{ad.price} €</Text>
       <Text style={styles.category}>{ad.categories.join(', ')}</Text>
       <Text style={styles.description}>{ad.description}</Text>
+      <Text style={styles.contact}>
+  Kontaktai: {ad.contacts.name ?? '-'}, {ad.contacts.phone ?? '-'}, {ad.contacts.email ?? '-'}
+</Text>
+
       <Text style={styles.contact}>Vartotojas: {ad.username}</Text>
 
       {isOwner && (

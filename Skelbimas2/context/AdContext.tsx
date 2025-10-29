@@ -19,11 +19,12 @@ type Action =
 type AdContextType = {
   ads: Ad[];
   isLoading: boolean;
-  addAd: (adData: Omit<Ad, 'id' | 'createdAt' | 'updatedAt' | 'ownerId'>) => Promise<Ad | null>;
+  addAd: (adData: Omit<Ad, 'id' | 'firestoreId' | 'createdAt' | 'updatedAt' | 'ownerId'>) => Promise<Ad | null>;
   updateAd: (ad: Ad) => Promise<Ad | null>;
-  deleteAd: (id: string) => Promise<void>;
+  deleteAd: (firestoreId: string) => Promise<void>; 
   getAdById: (id: string) => Ad | undefined;
 };
+
 
 const initialState: State = { ads: [], isLoading: true };
 
@@ -49,27 +50,42 @@ export const useAdContext = (): AdContextType => {
   if (!ctx) throw new Error('useAdContext must be used within AdProvider');
   return ctx;
 };
+export const generateId = () => Date.now().toString() + '_' + Math.floor(Math.random() * 1000000).toString();
 
 export const AdProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const auth = getAuth();
 
-  // Realtime Firestore ads
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'ads'), (snapshot) => {
-      const adsList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Ad[];
+useEffect(() => {
+  const unsub = onSnapshot(collection(db, 'ads'), (snapshot) => {
+const adsList = snapshot.docs.map((doc) => {
+  const data = doc.data();
+  return {
+    firestoreId: doc.id,
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    price: data.price,
+    categories: data.categories,
+    images: data.images,
+    contacts: data.contacts,
+    username: data.username,
+    ownerId: data.ownerId,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+  } as Ad;
+});
 
-      dispatch({ type: 'LOAD_ADS', payload: adsList });
-    });
 
-    return () => unsub();
-  }, []);
+    dispatch({ type: 'LOAD_ADS', payload: adsList });
+  });
 
-// generateId patobulintas (unikalesnis)
-const generateId = () => Date.now().toString() + '_' + Math.floor(Math.random() * 1000000).toString();
+  return () => unsub();
+}, []);
+
+
+
+
 
 const addAd: AdContextType['addAd'] = async (adData) => {
   const user = auth.currentUser;
@@ -78,23 +94,26 @@ const addAd: AdContextType['addAd'] = async (adData) => {
     return null;
   }
 
-  const id = generateId();
+const firestoreId = generateId(); 
+const newAd: Ad = {
+  id: Date.now().toString(),
+  firestoreId,
+  title: adData.title,
+  description: adData.description,
+  price: adData.price,
+  categories: adData.categories,
+  images: adData.images,
+  contacts: adData.contacts,
+  username: adData.username,
+  ownerId: user.uid,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+};
 
-  const newAd: Ad = {
-    id,
-    ...adData,
-    ownerId: user.uid,
-    username: adData.username,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
 
   try {
-    // Užrašome dokumentą su mūsų sugeneruotu id (NE addDoc)
     console.log('Creating ad with ownerId:', newAd.ownerId);
-    await setDoc(doc(db, 'ads', id), newAd);
-
-
+    await setDoc(doc(db, 'ads', firestoreId), newAd);
     return newAd;
   } catch (err) {
     console.error('addAd error:', err);
@@ -104,9 +123,10 @@ const addAd: AdContextType['addAd'] = async (adData) => {
 };
 
 
+
 const updateAd: AdContextType['updateAd'] = async (ad) => {
   const user = auth.currentUser;
-  console.log('Trying to update ad:', ad.id);
+  console.log('Trying to update ad:', ad.firestoreId);
   console.log('Current user uid:', user?.uid);
   console.log('Ad ownerId:', ad.ownerId);
 
@@ -123,7 +143,7 @@ const updateAd: AdContextType['updateAd'] = async (ad) => {
 
   try {
     const updated = { ...ad, updatedAt: Date.now() };
-    await updateDoc(doc(db, 'ads', ad.id), updated);
+    await updateDoc(doc(db, 'ads', ad.firestoreId), updated);
     return updated;
   } catch (err) {
     console.error('Update ad error:', err);
@@ -132,13 +152,15 @@ const updateAd: AdContextType['updateAd'] = async (ad) => {
   }
 };
 
-const deleteAd: AdContextType['deleteAd'] = async (id) => {
-  const user = auth.currentUser;
-  const ad = state.ads.find((a) => a.id === id);
 
-  console.log('Trying to delete ad:', id);
-  console.log('Current user uid:', user?.uid);
-  console.log('Ad ownerId:', ad?.ownerId);
+
+
+const deleteAd: AdContextType['deleteAd'] = async (firestoreId: string) => {
+  const user = auth.currentUser;
+  const ad = state.ads.find((a) => a.firestoreId === firestoreId);
+  console.log('Deleting ad with firestoreId:', firestoreId);
+console.log('State ads:', state.ads.map(a => ({ id: a.id, firestoreId: a.firestoreId })));
+
 
   if (!user || !ad) {
     Alert.alert('Klaida', 'Negalima ištrinti.');
@@ -146,19 +168,20 @@ const deleteAd: AdContextType['deleteAd'] = async (id) => {
   }
 
   if (ad.ownerId !== user.uid) {
-    console.warn('Permission denied: user is not the owner');
     Alert.alert('Klaida', 'Negalite ištrinti svetimo skelbimo');
     return;
   }
 
   try {
-    await deleteDoc(doc(db, 'ads', id));
-    console.log('Ad deleted:', id);
+    await deleteDoc(doc(db, 'ads', firestoreId));
+    console.log('Ad deleted:', firestoreId);
   } catch (err) {
     console.error('Delete ad error:', err);
     Alert.alert('Klaida', 'Nepavyko ištrinti skelbimo.');
   }
 };
+
+
 
 
   const getAdById = (id: string) => state.ads.find((a) => a.id === id);

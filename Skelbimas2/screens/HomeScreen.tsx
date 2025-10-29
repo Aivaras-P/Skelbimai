@@ -63,8 +63,8 @@ const filteredAds = useMemo(() => {
     // Filtravimas pagal paiešką: pavadinimas arba kaina
     const matchSearch =
       q.length === 0 ||
-      ad.title.toLowerCase().includes(q) ||     // pagal pavadinimą
-      ad.price.toString().includes(q);          // pagal kainą
+      ad.title.toLowerCase().includes(q) ||     
+      ad.price.toString().includes(q);          
 
     return matchCategory && matchUser && matchSearch;
   });

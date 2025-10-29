@@ -19,5 +19,6 @@ export type Ad = {
   updatedAt?: number;
   username: string;
   ownerId: string;
+  firestoreId: string;
 };
 

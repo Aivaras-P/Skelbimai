@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAdContext } from '../context/AdContext';
+import { generateId, useAdContext } from '../context/AdContext';
 import { useUserContext } from '../context/UserContext';
 import { storage } from '../db/firebase';
 import { Ad, ContactInfo } from '../types/Ad';
@@ -21,8 +21,8 @@ import { Ad, ContactInfo } from '../types/Ad';
 const categoriesList = ['CPU', 'GPU', 'Motherboard', 'RAM', 'PSU', 'Case'];
 
 export default function AddEditAdScreen() {
-  const CLOUDINARY_CLOUD_NAME = 'dfihzsvmw';  // tavo Cloudinary cloud name
-  const CLOUDINARY_UPLOAD_PRESET = 'unsigned_upload'; // tavo upload preset pavadinimas
+  const CLOUDINARY_CLOUD_NAME = 'dfihzsvmw';  
+  const CLOUDINARY_UPLOAD_PRESET = 'unsigned_upload'; 
   const { currentUser } = useUserContext();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { ads, addAd, updateAd } = useAdContext();
@@ -150,9 +150,10 @@ const handleSave = async () => {
 
     const ad: Ad = {
       id: editId ?? `${now}`,
+      firestoreId: editingAd?.firestoreId ?? generateId(), 
       title,
       description,
-      price: numericPrice, // naudojam number
+      price: numericPrice, 
       categories: categories as Ad['categories'],
       images: reorderedImages,
       contacts,
