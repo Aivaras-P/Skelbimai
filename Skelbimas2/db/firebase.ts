@@ -1,18 +1,16 @@
-// firebase.ts
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyBxRmI6gX7yZRPuwwCTws98ApB-e22U01s",
-  authDomain: "coral-velocity-476514-s3.firebaseapp.com",
-  projectId: "coral-velocity-476514-s3",
-  storageBucket: "coral-velocity-476514-s3.appspot.com",
-  messagingSenderId: "385609255235",
-  appId: "1:385609255235:web:cbe0be90a6911e5747c7f6",
-  measurementId: "G-XK3BCQVN5S"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
